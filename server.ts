@@ -1,11 +1,19 @@
-// Import the 'express' module
-import express from 'express';
+import express, { Application } from 'express';
 import sequelize from './config/mysql';
+import appRoutes from './routes/approute';
 
-const app = express();
-
-
+const app: Application = express();
 const port = 3000;
+import dotenv from 'dotenv';
+dotenv.config();
+
+
+// Middleware for JSON parsing
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Routes setup
+app.use('/v1', appRoutes);
 
 sequelize.authenticate()
   .then(() => {
@@ -14,6 +22,7 @@ sequelize.authenticate()
   .catch(err => {
     console.error('Unable to connect to the database:', err);
   });
+
 // Define a route for the root path ('/')
 app.get('/', (req, res) => {
   // Send a response to the client
@@ -22,6 +31,5 @@ app.get('/', (req, res) => {
 
 // Starting the server and listening on the specified port
 app.listen(port, () => {
-  
   console.log(`Server is running on http://localhost:${port}`);
 });
