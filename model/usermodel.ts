@@ -1,53 +1,65 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/mysql';
 
-class User extends Model {
-  public UserID!: number;
-  public Name!: string;
-  public Email!: string;
-  public Password!: string;
-  public Phone?: string;
-  public Address?: string;
-  public Role!: 'Admin' | 'Customer';
+
+
+// Define the User model attributes
+interface UserAttributes {
+  UserID: number;
+  Name: string;
+  Email: string;
+  Password: string;
+  Phone?: string;
+  Address?: string;
+  Role: 'Admin' | 'Customer';
+  OTP?: string;
+  OTPExpiration?: Date;
+  Verified?: boolean;
 }
 
-User.init(
-  {
-    UserID: {
-      type: DataTypes.INTEGER.UNSIGNED,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    Name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    Email: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      unique: true,
-    },
-    Password: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    Phone: {
-      type: DataTypes.STRING(20),
-      allowNull: true,
-    },
-    Address: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-    },
-    Role: {
-      type: DataTypes.ENUM('Admin', 'Customer'),
-      allowNull: false,
-    },
+// Define the User model instance
+export interface UserInstance extends Model<UserAttributes>, UserAttributes {}
+
+// Define the User model
+const User = sequelize.define<UserInstance>('User', {
+  UserID: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
   },
-  {
-    sequelize,
-    tableName: 'User',
+  Name: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  Email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true
+  },
+  Password: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  Phone: {
+    type: DataTypes.STRING
+  },
+  Address: {
+    type: DataTypes.STRING
+  },
+  Role: {
+    type: DataTypes.ENUM('Admin', 'Customer'),
+    allowNull: false
+  },
+  OTP: {
+    type: DataTypes.STRING
+  },
+  OTPExpiration: {
+    type: DataTypes.DATE
+  },
+  Verified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
-);
+});
 
 export default User;

@@ -15,6 +15,16 @@ app.use(express.urlencoded({ extended: true }));
 // Routes setup
 app.use('/v1', appRoutes);
 
+
+
+
+// Sync all models with the database
+sequelize.sync({ alter: true })
+  .then(() => {
+    console.log('Database & tables created!');
+  })
+  .catch((error) => console.log('This error occurred', error));
+
 sequelize.authenticate()
   .then(() => {
     console.log('Connection has been established successfully.');
