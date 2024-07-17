@@ -1,24 +1,25 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/mysql';
 
-// Define the User model attributes
-interface UserAttributes {
-  UserID?: number; // Make UserID optional
+// Define the Temporary User model attributes
+interface TempUserAttributes {
+  TempUserID?: number; // Make TempUserID optional
   Name: string;
   Email: string;
   Password: string;
   Phone?: string;
   Address?: string;
   Role: 'Admin' | 'Customer';
-  Verified: boolean;
+  OTP: string;
+  OTPExpiration: Date;
 }
 
-// Define the User model instance
-export interface UserInstance extends Model<UserAttributes>, UserAttributes {}
+// Define the Temporary User model instance
+export interface TempUserInstance extends Model<TempUserAttributes>, TempUserAttributes {}
 
-// Define the User model
-const User = sequelize.define<UserInstance>('User', {
-  UserID: {
+// Define the Temporary User model
+const TempUser = sequelize.define<TempUserInstance>('TempUser', {
+  TempUserID: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
     primaryKey: true
@@ -46,10 +47,14 @@ const User = sequelize.define<UserInstance>('User', {
     type: DataTypes.ENUM('Admin', 'Customer'),
     allowNull: false
   },
-  Verified: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
+  OTP: {
+    type: DataTypes.STRING,
+    allowNull: false
+  },
+  OTPExpiration: {
+    type: DataTypes.DATE,
+    allowNull: false
   }
 });
 
-export default User;
+export default TempUser;

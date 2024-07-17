@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import User, { UserInstance } from '../model/usermodel'; // Adjust import for User model and UserInstance
+import TempUser, { TempUserInstance } from '../model/tempusermodel';
+import User, { UserInstance } from '../model/usermodel';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
@@ -13,9 +14,7 @@ function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit OTP
 }
 
-
-
-
+// Signup and send OTP
 export const signup = async (req: Request, res: Response) => {
   try {
     const { name, email, password, phone, address, role } = req.body;
@@ -23,9 +22,8 @@ export const signup = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP(); // Generate OTP
 
-    // Save OTP and user details to the database
-    const user = await User.create({
-      UserID:0, 
+    // Saving OTP and temporary user details to the temporary user table
+    await TempUser.create({
       Name: name,
       Email: email,
       Password: hashedPassword,
@@ -46,21 +44,32 @@ export const signup = async (req: Request, res: Response) => {
   }
 };
 
-
+// Verify OTP and register user
 export const verifyOTP = async (req: Request, res: Response) => {
   try {
     const { email, otp } = req.body;
 
-    // Find user by email
-    const user = await User.findOne({ where: { Email: email } }) as UserInstance;
-    if (!user) {
+    // Find temporary user by email
+    const tempUser = await TempUser.findOne({ where: { Email: email } }) as TempUserInstance;
+    if (!tempUser) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     // Check if OTP matches and has not expired
-    if (user.OTP === otp && user.OTPExpiration && user.OTPExpiration > new Date()) {
-      // Update user status or mark as verified
-      await user.update({ Verified: true });
+    if (tempUser.OTP === otp && tempUser.OTPExpiration && tempUser.OTPExpiration > new Date()) {
+      // Transfer data from temporary user to actual user table
+      const user = await User.create({
+        Name: tempUser.Name,
+        Email: tempUser.Email,
+        Password: tempUser.Password,
+        Phone: tempUser.Phone,
+        Address: tempUser.Address,
+        Role: tempUser.Role,
+        Verified: true
+      });
+
+      // Delete the temporary user record
+      await TempUser.destroy({ where: { TempUserID: tempUser.TempUserID } });
 
       // Generate JWT token for authentication
       const token = jwt.sign({ userId: user.UserID }, JWT_SECRET, { expiresIn: '1h' });
@@ -78,6 +87,7 @@ export const verifyOTP = async (req: Request, res: Response) => {
   }
 };
 
+// Login user
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -106,4 +116,5 @@ export const login = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 export default { signup, verifyOTP, login };
