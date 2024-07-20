@@ -1,6 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import authcontroller from '../controller/auth';
 
+
 const router: Router = express.Router();
 
 // Define routes
