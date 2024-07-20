@@ -1,11 +1,13 @@
 import express, { Router } from 'express';
-import userRoutes from './userroutes';
+import authRoutes from './authroutes';
+import  userRoutes from './userroute';
+
 //import verifyRoutes from './verifyRoutes'
 
 const router: Router = express.Router();
 
-// Include user routes
+
+router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
-//router.use('/verify',verifyRoutes)
 
 export default router;
