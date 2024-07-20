@@ -6,8 +6,8 @@ import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { sendOTPByEmail } from '../utils/mailer';
 dotenv.config();
-
 const JWT_SECRET = process.env.JWT_SECRET as string;
+
 
 // Function to generate OTP
 function generateOTP() {
