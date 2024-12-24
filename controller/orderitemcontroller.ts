@@ -1,62 +1,85 @@
 import { Request, Response } from 'express';
 import OrderItem from '../model/orderitemmodel';
+import Order from '../model/odermodel';
+import Product from '../model/productmodel';
 
 export const getAllOrderItems = async (req: Request, res: Response) => {
   try {
-    const orderItems = await OrderItem.findAll();
-    res.status(200).json(orderItems);
-  } catch (error:any) {
-    res.status(500).json({ error: error.message });
+    const orderItems = await OrderItem.findAll({
+      include: [{ model: Product }],
+    });
+    res.json(orderItems);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
 export const getOrderItemById = async (req: Request, res: Response) => {
   try {
-    const orderItem = await OrderItem.findByPk(req.params.id);
-    if (orderItem) {
-      res.status(200).json(orderItem);
-    } else {
-      res.status(404).json({ message: 'Order Item not found' });
+    const orderItem = await OrderItem.findByPk(req.params.id, {
+      include: [{ model: Product }],
+    });
+    if (!orderItem) {
+      return res.status(404).json({ error: 'OrderItem not found' });
     }
-  } catch (error:any) {
-    res.status(500).json({ error: error.message });
+    res.json(orderItem);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
 export const createOrderItem = async (req: Request, res: Response) => {
   try {
-    const newOrderItem = await OrderItem.create(req.body);
-    res.status(201).json(newOrderItem);
-  } catch (error:any) {
-    res.status(500).json({ error: error.message });
+    const { OrderID, ProductID, Quantity, Price } = req.body;
+    const amount = Price * Quantity; // Calculate amount
+    const orderItem = await OrderItem.create({
+      OrderID,
+      ProductID,
+      Quantity,
+      Price,
+      Amount: amount,
+    });
+    res.status(201).json(orderItem);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
 export const updateOrderItem = async (req: Request, res: Response) => {
   try {
     const orderItem = await OrderItem.findByPk(req.params.id);
-    if (orderItem) {
-      await orderItem.update(req.body);
-      res.status(200).json(orderItem);
-    } else {
-      res.status(404).json({ message: 'Order Item not found' });
+    if (!orderItem) {
+      return res.status(404).json({ error: 'OrderItem not found' });
     }
-  } catch (error:any) {
-    res.status(500).json({ error: error.message });
+    const {  Quantity, Price } = req.body;
+    if (Quantity !== undefined) {
+      orderItem.Quantity = Quantity;
+    }
+    if (Price !== undefined) {
+      orderItem.Price = Price;
+    }
+    
+    orderItem.Amount = Price * Quantity; // Recalculate amount
+    await orderItem.save();
+    res.json(orderItem);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 export const deleteOrderItem = async (req: Request, res: Response) => {
   try {
     const orderItem = await OrderItem.findByPk(req.params.id);
-    if (orderItem) {
-      await orderItem.destroy();
-      res.status(200).json({ message: 'Order Item deleted' });
-    } else {
-      res.status(404).json({ message: 'Order Item not found' });
+    if (!orderItem) {
+      return res.status(404).json({ error: 'OrderItem not found' });
     }
-  } catch (error:any) {
-    res.status(500).json({ error: error.message });
+    await orderItem.destroy();
+    res.json({ message: 'OrderItem deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 export default { getAllOrderItems, getOrderItemById, createOrderItem, updateOrderItem, deleteOrderItem };

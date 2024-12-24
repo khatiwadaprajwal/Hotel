@@ -1,7 +1,7 @@
 import { DataTypes, Model } from 'sequelize';
-import sequelize from '../config/mysql';
-import Cart from './cartmodel';
-import Product from './productmodel';
+import sequelize from '../config/mysql'; // Adjust path if needed
+import Cart from './cartmodel'; // Ensure path is correct
+import Product from './productmodel'; // Ensure path is correct
 
 class CartItem extends Model {
   public CartItemID!: number;
@@ -41,6 +41,7 @@ CartItem.init({
   timestamps: false,
 });
 
+// Define associations
 CartItem.belongsTo(Cart, { foreignKey: 'CartID' });
 CartItem.belongsTo(Product, { foreignKey: 'ProductID' });
 

@@ -36,6 +36,7 @@ export const signup = async (req: Request, res: Response) => {
 
     // Send OTP via email
     await sendOTPByEmail(email, otp);
+    
 
     res.status(201).json({ message: 'OTP sent to email for verification' });
   } catch (error: any) {

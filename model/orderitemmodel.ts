@@ -1,5 +1,5 @@
 import { DataTypes, Model } from 'sequelize';
-import sequelize from '../config/mysql';
+import sequelize from '../config/mysql'; // Adjust path if needed
 import Order from './odermodel';
 import Product from './productmodel';
 
@@ -9,6 +9,7 @@ class OrderItem extends Model {
   public ProductID!: number;
   public Quantity!: number;
   public Price!: number;
+  public Amount!: number; // Add amount field
 }
 
 OrderItem.init({
@@ -39,6 +40,10 @@ OrderItem.init({
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
   },
+  Amount: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: false,
+  },
 }, {
   sequelize,
   modelName: 'OrderItem',
@@ -46,7 +51,9 @@ OrderItem.init({
   timestamps: false,
 });
 
+// Define associations
 OrderItem.belongsTo(Order, { foreignKey: 'OrderID' });
 OrderItem.belongsTo(Product, { foreignKey: 'ProductID' });
+Product.hasMany(OrderItem, { foreignKey: 'ProductID' });
 
 export default OrderItem;

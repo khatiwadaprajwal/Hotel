@@ -1,12 +1,11 @@
 import { DataTypes, Model } from 'sequelize';
-import sequelize from '../config/mysql';
+import sequelize from '../config/mysql'; // Adjust path if needed
 import User from './usermodel';
 
 class Order extends Model {
   public OrderID!: number;
   public UserID!: number;
   public OrderDate!: Date;
-  public TotalAmount!: number;
   public Status!: string;
 }
 
@@ -27,12 +26,8 @@ Order.init({
     type: DataTypes.DATE,
     allowNull: false,
   },
-  TotalAmount: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
-  },
   Status: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.STRING,
     allowNull: false,
   },
 }, {
@@ -42,6 +37,8 @@ Order.init({
   timestamps: false,
 });
 
+// Define associations
 Order.belongsTo(User, { foreignKey: 'UserID' });
+User.hasMany(Order, { foreignKey: 'UserID' });
 
 export default Order;
