@@ -6,6 +6,7 @@ import { Request, Response } from 'express';
 import{ generateAccessToken } from '../utils/paypal';
 import axios from 'axios';
 import dotenv from 'dotenv';
+import Product from '../model/productmodel';
 dotenv.config();
 
 
@@ -73,20 +74,32 @@ export const deletePayment = async (req: Request, res: Response) => {
 
 export const createPayPalPayment = async (req: Request, res: Response) => {
   try {
-    const { OrderID, PaymentMethod, PaymentDate, Amount, TransactionID } = req.body;
+    const { OrderID, OrderItems } = req.body;
 
-    // Ensure Amount is a number and properly formatted
-    const formattedAmount = parseFloat(Amount.toString());
-    if (isNaN(formattedAmount)) {
-      return res.status(400).json({ error: 'Invalid amount' });
+    // Validate each OrderItem's price
+    for (const item of OrderItems) {
+      const product:any = await Product.findByPk(item.ProductID);
+      
+      // If the product is not found, return an error
+      if (!product) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+
+      // Check if the price entered for the item matches the actual product price
+      if (parseFloat(item.Price) !== parseFloat(product.Price)) {
+        return res.status(400).json({
+          error: `Incorrect price for ${product.Name}. The correct price is ${product.Price}. Please enter the correct price.`
+        });
+      }
+
+      // If the price matches, calculate the amount for the order item
+      item.Amount = parseFloat(item.Price) * item.Quantity;
     }
 
-    // Get PayPal access token
-    const accessToken = await generateAccessToken();
-
-    // Define PayPal API URL
-    const baseUrl = process.env.PAYPAL_BASE_URL?.endsWith('/')
-      ? process.env.PAYPAL_BASE_URL
+    // After validation, proceed with PayPal payment creation
+    const accessToken = await generateAccessToken(); // Ensure this function is implemented correctly
+    const baseUrl = process.env.PAYPAL_BASE_URL?.endsWith('/') 
+      ? process.env.PAYPAL_BASE_URL 
       : `${process.env.PAYPAL_BASE_URL}/`;
     const url = `${baseUrl}v2/checkout/orders`;
 
@@ -104,25 +117,25 @@ export const createPayPalPayment = async (req: Request, res: Response) => {
           {
             amount: {
               currency_code: 'USD',
-              value: formattedAmount.toFixed(2), // Ensure to pass value as string
+              value: OrderItems.reduce((total: any, item: { Amount: any; }) => total + item.Amount, 0).toFixed(2),
             },
           },
         ],
       },
     });
 
-    // Check for the successful response
+    // Check if the PayPal order was created successfully
     if (response.data.status !== 'CREATED') {
       return res.status(500).json({ error: 'Failed to create PayPal order' });
     }
 
-    // Create payment entry in your database only if PayPal order creation was successful
+    // Create payment entry in your database if PayPal order creation was successful
     const newPayment = await Payment.create({
       OrderID,
-      PaymentMethod,
-      PaymentDate,
-      Amount: formattedAmount,
-      TransactionID,
+      PaymentMethod: 'PayPal',
+      PaymentDate: new Date(),
+      Amount: OrderItems.reduce((total: any, item: { Amount: any; }) => total + item.Amount, 0),
+      TransactionID: response.data.id, // Assuming PayPal transaction ID is returned
     });
 
     // Respond with the PayPal order data and payment details
@@ -136,7 +149,5 @@ export const createPayPalPayment = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
 
 export default { getAllPayments, getPaymentById, createPayment, updatePayment, deletePayment,createPayPalPayment};
